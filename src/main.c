@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <string.h>
 #include <SDL.h>
 #include <SDL_image.h>
 
@@ -79,13 +80,16 @@ int main(int argc, char **argv)
     if (texture_blocks == NULL) {
         ERROR_EXIT("Failed to load `blocks` texture\n");
     }
-    
-    SDL_Rect blocks_rects[] = {
-        { 0 },
-        { 0,  0, 16, 16 },
-        { 16, 0, 16, 16 },
-        { 32, 0, 16, 16 }
-    };
+
+    SDL_Rect block_rects[BLOCK_COUNT] = { 0 };
+    for (block_type_t block_type = BLOCK_NONE + 1;
+         block_type < BLOCK_COUNT; block_type++) {
+        block_rects[block_type] = (SDL_Rect) {
+            .x = (block_type - 1) % 16 * 16,
+            .y = (block_type - 1) / 16 * 16,
+            .w = 16, .h = 16
+        };
+    }
 
     world_t world = { 0 };
     generate_world(&world, rand());
@@ -113,6 +117,10 @@ int main(int argc, char **argv)
                     SDL_SetWindowSize(window,
                         WINDOW_WIDTH, WINDOW_HEIGHT);
                 }
+            } else if (event.type == SDL_MOUSEBUTTONDOWN &&
+                       event.button.button == SDL_BUTTON_LEFT) {
+                memset(&world, 0, sizeof(world_t));
+                generate_world(&world, rand());
             }
         }
 
@@ -134,7 +142,7 @@ int main(int argc, char **argv)
                     BLOCK_SIZE, BLOCK_SIZE
                 };
                 SDL_RenderCopy(renderer, texture_blocks,
-                    &blocks_rects[world[i].type],
+                    &block_rects[world[i].type],
                     &dst_rect);
             }
         }

@@ -3,6 +3,7 @@
 
 #include "window.h"
 #include "block.h"
+#include "util.h"
 
 #define BLOCK_SIZE 16
 #define WORLD_WIDTH (WINDOW_WIDTH / BLOCK_SIZE)
@@ -15,6 +16,6 @@
 
 typedef block_t world_t[WORLD_SIZE];
 
-void generate_world(world_t *world, unsigned char seed);
+void generate_world(world_t *world, u64 seed);
 
 #endif // WORLD_H

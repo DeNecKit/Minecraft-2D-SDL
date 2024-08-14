@@ -18,17 +18,17 @@ float noise(float x, float y, float z, float lacunarity, float gain, int octaves
     return fabs(sum);
 }
 
-float noise1d(float x, float lacunarity, float gain, int octaves, unsigned char seed)
+float noise1d(float x, float lacunarity, float gain, int octaves, u64 seed)
 {
-    return noise(x, 0, 0, lacunarity, gain, octaves, seed);
+    return noise(x, 0, seed, lacunarity, gain, octaves, (unsigned char)seed);
 }
 
-float noise2d(float x, float y, float lacunarity, float gain, int octaves, unsigned char seed)
+float noise2d(float x, float y, float lacunarity, float gain, int octaves, u64 seed)
 {
-    return noise(x, y, 0, lacunarity, gain, octaves, seed);
+    return noise(x, y, seed, lacunarity, gain, octaves, (unsigned char)seed);
 }
 
-void generate_world(world_t *world, unsigned char seed)
+void generate_world(world_t *world, u64 seed)
 {
     for (int x = 0; x < WORLD_WIDTH; x++) {
         #define NOISE(x, seed) noise1d(x / 256.f, 2.f, 0.8f, 5, seed)
