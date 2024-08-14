@@ -3,14 +3,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
+#include <math.h>
 
 #include <SDL.h>
 #include <SDL_image.h>
 #define STB_PERLIN_IMPLEMENTATION
 #include <stb_perlin.h>
-
-// #define NOISE(x, seed) stb_perlin_fbm_noise3(x, 0, 0, 2.5f, 0.6f, 3)
-#define NOISE(x, seed) stb_perlin_fbm_noise3(x, 0, 0, 2.f, -1.5f, 3)
 
 #define ERROR_EXIT(...) do { \
     fprintf(stderr, "ERROR: " __VA_ARGS__); \
@@ -23,13 +21,14 @@
 #define WINDOW_HEIGHT 720
 #define WINDOW_FLAGS SDL_WINDOW_SHOWN
 
-#define WORLD_WIDTH 80
-#define WORLD_HEIGHT 45
-#define WORLD_SIZE WORLD_WIDTH * WORLD_HEIGHT
-#define WORLD_MIN_Y 10
-#define WORLD_MAX_Y 20
-
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 16
+#define WORLD_WIDTH (WINDOW_WIDTH / BLOCK_SIZE) // 160
+#define WORLD_HEIGHT (WINDOW_HEIGHT / BLOCK_SIZE) // 90
+#define WORLD_SIZE (WORLD_WIDTH * WORLD_HEIGHT)
+#define GRASS_MIN 10
+#define GRASS_MAX 20
+#define DIRT_MIN 3
+#define DIRT_MAX 7
 
 typedef enum {
     BLOCK_NONE,
@@ -46,6 +45,31 @@ typedef struct {
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 bool is_fullscreen = false;
+
+float noise(float x, float y, float z, float lacunarity, float gain, int octaves, unsigned char seed)
+{
+    int i;
+    float frequency = 1.0f;
+    float amplitude = 1.0f;
+    float sum = 0.0f;
+
+    for (i = 0; i < octaves; i++) {
+        sum += stb_perlin_noise3_internal(x*frequency,y*frequency,z*frequency,0,0,0,(unsigned char)((i+seed)%256))*amplitude;
+        frequency *= lacunarity;
+        amplitude *= gain;
+    }
+    return fabs(sum);
+}
+
+float noise1d(float x, float lacunarity, float gain, int octaves, unsigned char seed)
+{
+    return noise(x, 0, 0, lacunarity, gain, octaves, seed);
+}
+
+float noise2d(float x, float y, float lacunarity, float gain, int octaves, unsigned char seed)
+{
+    return noise(x, y, 0, lacunarity, gain, octaves, seed);
+}
 
 SDL_Texture* load_texture(const char* path)
 {
@@ -121,16 +145,18 @@ int main(int argc, char **argv)
         { 32, 0, 16, 16 }
     };
 
-    int seed = rand();
+    int seed = rand() % 256;
     block_t world[WORLD_SIZE] = { 0 };
     for (int x = 0; x < WORLD_WIDTH; x++) {
-        int grass_y = NOISE((float)x / WORLD_WIDTH, seed * 10) * (WORLD_MAX_Y - WORLD_MIN_Y) + WORLD_MIN_Y;
+        #define NOISE(x, seed) noise1d(x / 256.f, 2.f, 0.8f, 5, seed)
+        int grass_y = NOISE(x, seed) * (GRASS_MAX - GRASS_MIN) + GRASS_MIN;
+        int dirt_y = NOISE(x, seed + 5) * (DIRT_MAX - DIRT_MIN) + DIRT_MIN + grass_y;
         for (int y = 0; y < WORLD_HEIGHT; y++) {
             int i = x * WORLD_HEIGHT + y;
             if (y >= grass_y) {
                 block_type_t type = BLOCK_NONE;
                 if (y == grass_y) type = BLOCK_GRASS;
-                else if (y < grass_y + 5) type = BLOCK_DIRT;
+                else if (y <= dirt_y) type = BLOCK_DIRT;
                 else type = BLOCK_STONE;
                 world[i] = (block_t) {
                     .type = type,
