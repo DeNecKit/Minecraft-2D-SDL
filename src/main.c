@@ -1,75 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <time.h>
-#include <math.h>
-
 #include <SDL.h>
 #include <SDL_image.h>
-#define STB_PERLIN_IMPLEMENTATION
-#include <stb_perlin.h>
 
-#define ERROR_EXIT(...) do { \
-    fprintf(stderr, "ERROR: " __VA_ARGS__); \
-    exit(1); \
-} while (0)
-
-#define GAME_VERSION "1.0.0-alpha"
-#define WINDOW_TITLE "Minecraft 2D " GAME_VERSION
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
-#define WINDOW_FLAGS SDL_WINDOW_SHOWN
-
-#define BLOCK_SIZE 16
-#define WORLD_WIDTH (WINDOW_WIDTH / BLOCK_SIZE) // 160
-#define WORLD_HEIGHT (WINDOW_HEIGHT / BLOCK_SIZE) // 90
-#define WORLD_SIZE (WORLD_WIDTH * WORLD_HEIGHT)
-#define GRASS_MIN 10
-#define GRASS_MAX 20
-#define DIRT_MIN 3
-#define DIRT_MAX 7
-
-typedef enum {
-    BLOCK_NONE,
-    BLOCK_GRASS,
-    BLOCK_DIRT,
-    BLOCK_STONE
-} block_type_t;
-
-typedef struct {
-    block_type_t type;
-    SDL_Rect rect;
-} block_t;
+#include "util.h"
+#include "window.h"
+#include "world.h"
+#include "block.h"
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 bool is_fullscreen = false;
-
-float noise(float x, float y, float z, float lacunarity, float gain, int octaves, unsigned char seed)
-{
-    int i;
-    float frequency = 1.0f;
-    float amplitude = 1.0f;
-    float sum = 0.0f;
-
-    for (i = 0; i < octaves; i++) {
-        sum += stb_perlin_noise3_internal(x*frequency,y*frequency,z*frequency,0,0,0,(unsigned char)((i+seed)%256))*amplitude;
-        frequency *= lacunarity;
-        amplitude *= gain;
-    }
-    return fabs(sum);
-}
-
-float noise1d(float x, float lacunarity, float gain, int octaves, unsigned char seed)
-{
-    return noise(x, 0, 0, lacunarity, gain, octaves, seed);
-}
-
-float noise2d(float x, float y, float lacunarity, float gain, int octaves, unsigned char seed)
-{
-    return noise(x, y, 0, lacunarity, gain, octaves, seed);
-}
 
 SDL_Texture* load_texture(const char* path)
 {
@@ -77,7 +20,7 @@ SDL_Texture* load_texture(const char* path)
     SDL_Surface* surface = IMG_Load(path);
     
     if (surface == NULL) {
-        fprintf(stderr, "Could not load image `%s`: %s",
+        fprintf(stderr, "Could not load image `%s`: %s\n",
                         path, IMG_GetError());
         return NULL;
     }
@@ -124,8 +67,7 @@ int main(int argc, char **argv)
                    SDL_GetError());
     }
 
-    renderer = SDL_CreateRenderer(window, -1,
-        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    renderer = SDL_CreateRenderer(window, -1, RENDERER_FLAGS);
     if (renderer == NULL) {
         ERROR_EXIT("Failed to create renderer: %s\n",
                    SDL_GetError());
@@ -145,34 +87,13 @@ int main(int argc, char **argv)
         { 32, 0, 16, 16 }
     };
 
-    int seed = rand() % 256;
-    block_t world[WORLD_SIZE] = { 0 };
-    for (int x = 0; x < WORLD_WIDTH; x++) {
-        #define NOISE(x, seed) noise1d(x / 256.f, 2.f, 0.8f, 5, seed)
-        int grass_y = NOISE(x, seed) * (GRASS_MAX - GRASS_MIN) + GRASS_MIN;
-        int dirt_y = NOISE(x, seed + 5) * (DIRT_MAX - DIRT_MIN) + DIRT_MIN + grass_y;
-        for (int y = 0; y < WORLD_HEIGHT; y++) {
-            int i = x * WORLD_HEIGHT + y;
-            if (y >= grass_y) {
-                block_type_t type = BLOCK_NONE;
-                if (y == grass_y) type = BLOCK_GRASS;
-                else if (y <= dirt_y) type = BLOCK_DIRT;
-                else type = BLOCK_STONE;
-                world[i] = (block_t) {
-                    .type = type,
-                    .rect = {
-                        x*BLOCK_SIZE, y*BLOCK_SIZE,
-                        BLOCK_SIZE, BLOCK_SIZE
-                    }
-                };
-            }
-        }
-    }
+    world_t world = { 0 };
+    generate_world(&world, rand());
 
     SDL_Event event;
     bool running = true;
-    uint64_t cur_time, last_time = SDL_GetTicks64();
-    int ticks;
+    u64 cur_time, last_time = SDL_GetTicks64();
+    int ticks = 0;
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -189,7 +110,8 @@ int main(int argc, char **argv)
                         SDL_WINDOW_FULLSCREEN_DESKTOP);
                 } else {
                     SDL_SetWindowFullscreen(window, 0);
-                    SDL_SetWindowSize(window, WINDOW_WIDTH, WINDOW_HEIGHT);
+                    SDL_SetWindowSize(window,
+                        WINDOW_WIDTH, WINDOW_HEIGHT);
                 }
             }
         }
@@ -206,9 +128,14 @@ int main(int argc, char **argv)
         SDL_RenderClear(renderer);
         for (int i = 0; i < WORLD_SIZE; i++) {
             if (world[i].type != BLOCK_NONE) {
+                SDL_Rect dst_rect = {
+                    .x = world[i].x * BLOCK_SIZE,
+                    .y = world[i].y * BLOCK_SIZE,
+                    BLOCK_SIZE, BLOCK_SIZE
+                };
                 SDL_RenderCopy(renderer, texture_blocks,
                     &blocks_rects[world[i].type],
-                    &world[i].rect);
+                    &dst_rect);
             }
         }
         SDL_RenderPresent(renderer);
