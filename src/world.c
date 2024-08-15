@@ -2,6 +2,7 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
 #include <math.h>
+#include "block.h"
 
 float noise(float x, float y, float z, float lacunarity, float gain, int octaves, unsigned char seed)
 {
@@ -43,6 +44,24 @@ void generate_world(world_t *world, u64 seed)
                 else type = BLOCK_STONE;
                 (*world)[i] = (block_t) { type, x, y };
             }
+        }
+    }
+}
+
+SDL_Texture *texture_blocks = NULL;
+
+void render_world(world_t *world, SDL_Renderer *renderer)
+{
+    for (int i = 0; i < WORLD_SIZE; i++) {
+        if ((*world)[i].type != BLOCK_NONE) {
+            SDL_Rect dst_rect = {
+                .x = (*world)[i].x * BLOCK_SIZE,
+                .y = (*world)[i].y * BLOCK_SIZE,
+                BLOCK_SIZE, BLOCK_SIZE
+            };
+            SDL_RenderCopy(renderer, texture_blocks,
+                &block_rects[(*world)[i].type],
+                &dst_rect);
         }
     }
 }

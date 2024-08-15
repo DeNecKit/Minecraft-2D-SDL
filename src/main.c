@@ -8,6 +8,7 @@
 
 #include "util.h"
 #include "window.h"
+#include "texture.h"
 #include "world.h"
 #include "block.h"
 
@@ -15,33 +16,10 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 bool is_fullscreen = false;
 
-SDL_Texture* load_texture(const char* path)
+world_t world = { 0 };
+
+void init()
 {
-    SDL_Texture* texture = NULL;
-    SDL_Surface* surface = IMG_Load(path);
-    
-    if (surface == NULL) {
-        fprintf(stderr, "Could not load image `%s`: %s\n",
-                        path, IMG_GetError());
-        return NULL;
-    }
-
-    texture = SDL_CreateTextureFromSurface(renderer, surface);
-    if (texture == NULL) {
-        fprintf(stderr, "Could not create texture from `%s`: %s",
-                        path, SDL_GetError());
-        return NULL;
-    }
-
-    SDL_FreeSurface(surface);
-    return texture;
-}
-
-int main(int argc, char **argv)
-{
-    (void) argc;
-    (void) argv;
-
     srand(time(0));
 
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
@@ -75,24 +53,23 @@ int main(int argc, char **argv)
     }
     SDL_SetRenderDrawColor(renderer, 0xb0, 0xd6, 0xf5, 0xff);
 
-    SDL_Texture *texture_blocks = load_texture(
-        "assets/textures/blocks.png");
+    texture_blocks = load_texture(
+        "assets/textures/blocks.png", renderer);
     if (texture_blocks == NULL) {
         ERROR_EXIT("Failed to load `blocks` texture\n");
     }
 
-    SDL_Rect block_rects[BLOCK_COUNT] = { 0 };
-    for (block_type_t block_type = BLOCK_NONE + 1;
-         block_type < BLOCK_COUNT; block_type++) {
-        block_rects[block_type] = (SDL_Rect) {
-            .x = (block_type - 1) % 16 * 16,
-            .y = (block_type - 1) / 16 * 16,
-            .w = 16, .h = 16
-        };
-    }
-
-    world_t world = { 0 };
+    block_init();
+    
     generate_world(&world, rand());
+}
+
+int main(int argc, char **argv)
+{
+    (void) argc;
+    (void) argv;
+
+    init();
 
     SDL_Event event;
     bool running = true;
@@ -134,18 +111,7 @@ int main(int argc, char **argv)
         }
 
         SDL_RenderClear(renderer);
-        for (int i = 0; i < WORLD_SIZE; i++) {
-            if (world[i].type != BLOCK_NONE) {
-                SDL_Rect dst_rect = {
-                    .x = world[i].x * BLOCK_SIZE,
-                    .y = world[i].y * BLOCK_SIZE,
-                    BLOCK_SIZE, BLOCK_SIZE
-                };
-                SDL_RenderCopy(renderer, texture_blocks,
-                    &block_rects[world[i].type],
-                    &dst_rect);
-            }
-        }
+        render_world(&world, renderer);
         SDL_RenderPresent(renderer);
     }
 

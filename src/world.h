@@ -1,6 +1,8 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#include <SDL.h>
+
 #include "window.h"
 #include "block.h"
 #include "util.h"
@@ -17,5 +19,8 @@
 typedef block_t world_t[WORLD_SIZE];
 
 void generate_world(world_t *world, u64 seed);
+void render_world(world_t *world, SDL_Renderer *renderer);
+
+extern SDL_Texture *texture_blocks;
 
 #endif // WORLD_H

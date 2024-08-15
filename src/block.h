@@ -1,6 +1,8 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
+#include <SDL.h>
+
 typedef enum {
     BLOCK_NONE,
     BLOCK_GRASS,
@@ -13,5 +15,9 @@ typedef struct {
     block_type_t type;
     int x, y;
 } block_t;
+
+void block_init();
+
+extern SDL_Rect block_rects[BLOCK_COUNT];
 
 #endif // BLOCK_H
