@@ -31,37 +31,40 @@ float noise2d(float x, float y, float lacunarity, float gain, int octaves, u64 s
 
 void generate_world(world_t *world, u64 seed)
 {
-    for (int x = 0; x < WORLD_WIDTH; x++) {
-        #define NOISE(x, seed) noise1d(x / 256.f, 2.f, 0.8f, 5, seed)
-        int grass_y = NOISE(x, seed) * (GRASS_MAX - GRASS_MIN) + GRASS_MIN;
-        int dirt_y = NOISE(x, seed + 5) * (DIRT_MAX - DIRT_MIN) + DIRT_MIN + grass_y;
-        for (int y = 0; y < WORLD_HEIGHT; y++) {
-            int i = x * WORLD_HEIGHT + y;
-            if (y >= grass_y) {
-                block_type_t type = BLOCK_NONE;
-                if (y == grass_y) type = BLOCK_GRASS;
-                else if (y <= dirt_y) type = BLOCK_DIRT;
+    int i = 0;
+    for (int dx = 0; dx < WORLD_WIDTH; dx++) {
+        int x = dx - WORLD_WIDTH / 2;
+#define NOISE(x, seed) noise1d(x / 512.f, 2.f, 0.8f, 5, seed)
+        int grass_y = NOISE(x, seed) * GRASS_RANGE + GRASS_MIN;
+        int dirt_y = grass_y - (NOISE(x, seed + 5) * DIRT_RANGE + DIRT_MIN);
+        for (int y = WORLD_HEIGHT - 1; y >= 0; y--) {
+            block_type_t type = BLOCK_NONE;
+            if (y == grass_y) type = BLOCK_GRASS;
+            else if (y < grass_y) {
+                if (y >= dirt_y) type = BLOCK_DIRT;
                 else type = BLOCK_STONE;
-                (*world)[i] = (block_t) { type, x, y };
             }
+            (*world)[i++] = (block_t) { type, x, y };
         }
+    }
+}
+
+void render_world(world_t *world,
+                  SDL_Renderer *renderer, player_t *player)
+{
+    for (int i = 0; i < WORLD_SIZE; i++) {
+        if ((*world)[i].type == BLOCK_NONE) continue;
+        float x = ((*world)[i].x - player->x) * BLOCK_SIZE;
+        x += WINDOW_WIDTH / 2.f;
+        float y = ((*world)[i].y - player->y) * -BLOCK_SIZE;
+        y += WINDOW_HEIGHT / 2.f;
+        if (x + BLOCK_SIZE < 0 || y + BLOCK_SIZE < 0 ||
+            x > WINDOW_WIDTH || y > WINDOW_HEIGHT) continue;
+        SDL_Rect dst_rect = { x, y, BLOCK_SIZE, BLOCK_SIZE };
+        SDL_RenderCopy(renderer, texture_blocks,
+            &block_rects[(*world)[i].type],
+            &dst_rect);
     }
 }
 
 SDL_Texture *texture_blocks = NULL;
-
-void render_world(world_t *world, SDL_Renderer *renderer)
-{
-    for (int i = 0; i < WORLD_SIZE; i++) {
-        if ((*world)[i].type != BLOCK_NONE) {
-            SDL_Rect dst_rect = {
-                .x = (*world)[i].x * BLOCK_SIZE,
-                .y = (*world)[i].y * BLOCK_SIZE,
-                BLOCK_SIZE, BLOCK_SIZE
-            };
-            SDL_RenderCopy(renderer, texture_blocks,
-                &block_rects[(*world)[i].type],
-                &dst_rect);
-        }
-    }
-}

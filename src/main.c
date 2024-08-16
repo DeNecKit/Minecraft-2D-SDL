@@ -11,12 +11,16 @@
 #include "texture.h"
 #include "world.h"
 #include "block.h"
+#include "player.h"
+
+// TODO: minimap
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 bool is_fullscreen = false;
 
 world_t world = { 0 };
+player_t player = { .x = 0, .y = GRASS_MIN };
 
 void init()
 {
@@ -73,7 +77,9 @@ int main(int argc, char **argv)
 
     SDL_Event event;
     bool running = true;
-    u64 cur_time, last_time = SDL_GetTicks64();
+    u64 last_fps_time = SDL_GetTicks64();
+    u64 cur_time, last_time = last_fps_time;
+    float dt = 0.f;
     int ticks = 0;
 
     while (running) {
@@ -103,15 +109,20 @@ int main(int argc, char **argv)
 
         ticks++;
         cur_time = SDL_GetTicks64();
-        if (cur_time - last_time >= 1000) {
-            printf("FPS: %f\n",
-                   (float)ticks / (cur_time - last_time) * 1000);
-            last_time = cur_time;
+        dt = (cur_time - last_time) / 1000.f;
+        last_time = cur_time;
+        if (cur_time - last_fps_time >= 1000) {
+            printf("FPS: %f\tx: %f\ty: %f\n",
+                   (float)ticks / (cur_time - last_fps_time) * 1000,
+                   player.x, player.y);
+            last_fps_time = cur_time;
             ticks = 0;
         }
 
+        player_update(&player, dt);
+
         SDL_RenderClear(renderer);
-        render_world(&world, renderer);
+        render_world(&world, renderer, &player);
         SDL_RenderPresent(renderer);
     }
 
