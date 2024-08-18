@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <SDL_image.h>
 
-SDL_Texture* load_texture(const char *path, SDL_Renderer *renderer)
+SDL_Texture* load_texture(SDL_Renderer *renderer, const char *path)
 {
     SDL_Texture* texture = NULL;
     SDL_Surface* surface = IMG_Load(path);
