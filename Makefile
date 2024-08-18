@@ -6,6 +6,7 @@ CFLAGS += -I./include -I./include/SDL2
 CFLAGS_RELEASE = -O3 -mwindows
 LIB = -L./lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
 OUT = build/Minecraft-2D.exe
+RELEASE_NAME = Minecraft-2D-${shell git describe --tags}
 
 .PHONY: all build run
 
