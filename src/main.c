@@ -129,7 +129,7 @@ void init()
 
     block_init();
     
-    generate_world(&world, rand());
+    generate_world(world, rand());
 
     minimap_texture = SDL_CreateTexture(renderer,
         SDL_PIXELFORMAT_RGBA32,
@@ -172,7 +172,7 @@ int main(int argc, char **argv)
             } else if (event.type == SDL_MOUSEBUTTONDOWN &&
                        event.button.button == SDL_BUTTON_LEFT) {
                 memset(&world, 0, sizeof(world_t));
-                generate_world(&world, rand());
+                generate_world(world, rand());
                 render_minimap(minimap_texture, &world);
             }
         }
@@ -192,13 +192,20 @@ int main(int argc, char **argv)
         SDL_SetRenderDrawColor(renderer, 0xb0, 0xd6, 0xf5, 0xff);
         SDL_RenderClear(renderer);
         
-        render_world(&world, renderer, &player);
+        render_world(world, renderer, &player);
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x80);
         SDL_RenderFillRect(renderer, NULL);
 
         SDL_SetRenderDrawColor(renderer, 0xff, 0x00, 0x00, 0xff);
         SDL_RenderDrawRect(renderer, &border);
         SDL_RenderCopy(renderer, minimap_texture, NULL, &minimap_dst);
+        
+        SDL_Rect minimap_player = {
+            .x = WINDOW_WIDTH / 2 + player.x - 3,
+            .y = WINDOW_HEIGHT / 2 + WORLD_HEIGHT / 2 - player.y - 3,
+            .w = 6, .h = 6
+        };
+        SDL_RenderFillRect(renderer, &minimap_player);
 
         SDL_LockTextureToSurface(f3_texture, NULL, &f3_surface);
         SDL_FillRect(f3_surface, NULL, 0);

@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+#include <assert.h>
+
 #define ERROR_EXIT(...) do { \
     fprintf(stderr, "ERROR: " __VA_ARGS__); \
     exit(1); \

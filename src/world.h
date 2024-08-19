@@ -21,8 +21,8 @@
 
 typedef block_t world_t[WORLD_SIZE];
 
-void generate_world(world_t *world, u64 seed);
-void render_world(world_t *world,
+void generate_world(world_t world, u64 seed);
+void render_world(const world_t world,
                   SDL_Renderer *renderer, player_t *player);
 
 extern SDL_Texture *texture_blocks;

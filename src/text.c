@@ -1,4 +1,3 @@
-#include <assert.h>
 #include "text.h"
 #include "util.h"
 
@@ -18,7 +17,7 @@ void *text_realloc(void *mem, size_t size)
 {
     (void) mem;
     (void) size;
-    ERROR_EXIT("This function is just a placeholder,"
+    ERROR_EXIT("(realloc) This function is just a placeholder, "
                "should be unreachable\n");
     return NULL;
 }
@@ -26,8 +25,6 @@ void *text_realloc(void *mem, size_t size)
 void text_free(void *mem)
 {
     (void) mem;
-    ERROR_EXIT("This function is just a placeholder,"
-               "should be unreachable\n");
 }
 
 void create_font_atlas(const char *font_path, int ptsize,
