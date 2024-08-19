@@ -2,6 +2,7 @@ CC = gcc
 SRC = ${wildcard src/*.c}
 OBJ = ${patsubst src/%.c, build/%.o, ${SRC}}
 CFLAGS = -Dmain=SDL_main -Wall -Wextra -std=c11 -Wpedantic
+CFLAGS += -Wswitch -Wswitch-enum
 CFLAGS += -I./include -I./include/SDL2
 CFLAGS_RELEASE = -O3 -mwindows
 LIB = -L./lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf

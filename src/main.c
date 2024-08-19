@@ -16,8 +16,6 @@
 #include "block.h"
 #include "player.h"
 
-// TODO: minimap
-
 #define FONT_F3_SIZE 240000
 
 SDL_Window *window = NULL;
@@ -30,8 +28,43 @@ SDL_Texture *f3_texture = NULL;
 SDL_Surface *f3_surface = NULL;
 int fps = 0;
 
+SDL_Texture *minimap_texture = NULL;
+
 world_t world = { 0 };
 player_t player = { .x = 0, .y = GRASS_MIN };
+
+void render_minimap(SDL_Texture *dst, world_t *world)
+{
+    SDL_Surface *surface = NULL;
+    SDL_LockTextureToSurface(dst, NULL, &surface);
+    SDL_FillRect(surface, NULL, 0);
+    for (int i = 0; i < WORLD_SIZE; i++) {
+        if ((*world)[i].type == BLOCK_NONE) continue;
+        SDL_Color clr;
+        switch ((*world)[i].type) {
+            case BLOCK_GRASS:
+                clr = (SDL_Color) { 0x00, 0xff, 0x00, 0xff };
+                break;
+            case BLOCK_DIRT:
+                clr = (SDL_Color) { 0x9b, 0x6d, 0x4a, 0xff };
+                break;
+            case BLOCK_STONE:
+                clr = (SDL_Color) { 0x80, 0x80, 0x80, 0xff };
+                break;
+            default:
+            case BLOCK_NONE:
+            case BLOCK_COUNT:
+                ERROR_EXIT("Unreachable\n");
+        }
+        int x = (*world)[i].x + WORLD_WIDTH / 2;
+        int y = -(*world)[i].y + WORLD_HEIGHT;
+        SDL_Rect rect = { x, y, 1, 1 };
+        SDL_FillRect(surface, &rect,
+            SDL_MapRGBA(surface->format,
+                clr.r, clr.g, clr.b, clr.a));
+    }
+    SDL_UnlockTexture(dst);
+}
 
 void init()
 {
@@ -71,7 +104,11 @@ void init()
         ERROR_EXIT("Failed to create renderer: %s\n",
                    SDL_GetError());
     }
-    SDL_SetRenderDrawColor(renderer, 0xb0, 0xd6, 0xf5, 0xff);
+    if (SDL_SetRenderDrawBlendMode(renderer,
+        SDL_BLENDMODE_BLEND) < 0) {
+        ERROR_EXIT("Failed to set renderer blend mode: %s",
+                   SDL_GetError());
+    }
 
     texture_blocks = load_texture(renderer,
         "assets/textures/blocks.png");
@@ -90,11 +127,16 @@ void init()
         WINDOW_WIDTH, WINDOW_HEIGHT);
     SDL_SetTextureBlendMode(f3_texture, SDL_BLENDMODE_BLEND);
 
-    printf("%lld/%lld\n", font_f3_arena->count, font_f3_arena->size);
-
     block_init();
     
     generate_world(&world, rand());
+
+    minimap_texture = SDL_CreateTexture(renderer,
+        SDL_PIXELFORMAT_RGBA32,
+        SDL_TEXTUREACCESS_STREAMING,
+        WORLD_WIDTH, WORLD_HEIGHT);
+    SDL_SetTextureBlendMode(minimap_texture, SDL_BLENDMODE_BLEND);
+    render_minimap(minimap_texture, &world);
 }
 
 int main(int argc, char **argv)
@@ -112,6 +154,17 @@ int main(int argc, char **argv)
     int ticks = 0;
     char f3_str[64] = { 0 };
 
+    SDL_Rect border = {
+        .x = -WORLD_WIDTH / 2 + WINDOW_WIDTH / 2 - 1,
+        .y = -WORLD_HEIGHT / 2 + WINDOW_HEIGHT / 2 - 1,
+        .w = WORLD_WIDTH + 2, .h = WORLD_HEIGHT + 2
+    };
+    SDL_Rect minimap_dst = {
+        WINDOW_WIDTH / 2 - WORLD_WIDTH / 2,
+        WINDOW_HEIGHT / 2 - WORLD_HEIGHT / 2,
+        WORLD_WIDTH, WORLD_HEIGHT
+    };
+
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -120,6 +173,7 @@ int main(int argc, char **argv)
                        event.button.button == SDL_BUTTON_LEFT) {
                 memset(&world, 0, sizeof(world_t));
                 generate_world(&world, rand());
+                render_minimap(minimap_texture, &world);
             }
         }
 
@@ -135,9 +189,16 @@ int main(int argc, char **argv)
 
         player_update(&player, dt);
 
+        SDL_SetRenderDrawColor(renderer, 0xb0, 0xd6, 0xf5, 0xff);
         SDL_RenderClear(renderer);
         
         render_world(&world, renderer, &player);
+        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x80);
+        SDL_RenderFillRect(renderer, NULL);
+
+        SDL_SetRenderDrawColor(renderer, 0xff, 0x00, 0x00, 0xff);
+        SDL_RenderDrawRect(renderer, &border);
+        SDL_RenderCopy(renderer, minimap_texture, NULL, &minimap_dst);
 
         SDL_LockTextureToSurface(f3_texture, NULL, &f3_surface);
         SDL_FillRect(f3_surface, NULL, 0);
