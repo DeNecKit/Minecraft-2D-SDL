@@ -4,6 +4,7 @@ OBJ = ${patsubst src/%.c, build/%.o, ${SRC}}
 CFLAGS = -Dmain=SDL_main -Wall -Wextra -std=c11 -Wpedantic
 CFLAGS += -Wswitch -Wswitch-enum
 CFLAGS += -I./include -I./include/SDL2
+CFLAGS_DEBUG = -g
 CFLAGS_RELEASE = -O3 -mwindows -DNDEBUG
 LIB = -L./lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
 OUT = build/Minecraft-2D.exe
@@ -18,10 +19,10 @@ ${OUT}: ${SRC} ${wildcard src/*.h}
 	make build
 
 build: ${OBJ}
-	${CC} ${OBJ} -o ${OUT} ${LIB}
+	${CC} ${OBJ} -o ${OUT} ${LIB} ${CFLAGS_DEBUG}
 
 build/%.o: src/%.c
-	${CC} -c $< -o $@ ${CFLAGS}
+	${CC} -c $< -o $@ ${CFLAGS} ${CFLAGS_DEBUG}
 
 run: ${OUT}
 	./${OUT}
