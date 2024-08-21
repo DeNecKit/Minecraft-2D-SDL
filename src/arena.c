@@ -21,8 +21,3 @@ void *arena_alloc(arena_t *arena, size_t size)
     arena->count += size;
     return ptr;
 }
-
-void arena_free(arena_t *arena)
-{
-    free(arena);
-}
