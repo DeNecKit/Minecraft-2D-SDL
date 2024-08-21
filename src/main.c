@@ -20,7 +20,7 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 bool is_fullscreen = false;
 
-font_atlas *f3_atlas = NULL;
+font_atlas f3_atlas = { 0 };
 
 SDL_Texture *minimap_texture = NULL;
 
@@ -110,8 +110,8 @@ void init()
         ERROR_EXIT("Failed to load `blocks` texture\n");
     }
 
-    f3_atlas = create_font_atlas(
-        renderer, "assets/font/Minecraft.otf", 23,
+    create_font_atlas(renderer, &f3_atlas,
+        "assets/font/Minecraft.otf", 23,
         (SDL_Color) { 0xff, 0xff, 0xff, 0xff });
 
     block_init();
@@ -201,11 +201,10 @@ int main(int argc, char **argv)
         
         sprintf(f3_str, "%d FPS\nX: %.2f, Y: %.2f",
                         fps, player.x, player.y);
-        render_text(renderer, f3_atlas, f3_str, 15, 15);
+        render_text(renderer, &f3_atlas, f3_str, 15, 15);
         
         SDL_RenderPresent(renderer);
     }
-
 
     SDL_DestroyTexture(texture_blocks);
     SDL_DestroyRenderer(renderer);
