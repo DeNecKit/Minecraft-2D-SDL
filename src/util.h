@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
-
+#include <limits.h>
 #include <assert.h>
 
 #define ERROR_EXIT(...) do { \

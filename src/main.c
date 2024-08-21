@@ -16,17 +16,11 @@
 #include "block.h"
 #include "player.h"
 
-#define FONT_F3_SIZE 240000
-
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 bool is_fullscreen = false;
 
-arena_t *font_f3_arena = NULL;
-SDL_Surface *font_f3_atlas[FONT_CHAR_COUNT] = { NULL };
-SDL_Texture *f3_texture = NULL;
-SDL_Surface *f3_surface = NULL;
-int fps = 0;
+font_atlas *f3_atlas = NULL;
 
 SDL_Texture *minimap_texture = NULL;
 
@@ -116,16 +110,9 @@ void init()
         ERROR_EXIT("Failed to load `blocks` texture\n");
     }
 
-    font_f3_arena = arena_new(FONT_F3_SIZE);
-    create_font_atlas("assets/font/Minecraft.otf", 23,
-        (SDL_Color) { 0xff, 0xff, 0xff, 0xff },
-        font_f3_arena, font_f3_atlas);
-
-    f3_texture = SDL_CreateTexture(renderer,
-        SDL_PIXELFORMAT_RGBA32,
-        SDL_TEXTUREACCESS_STREAMING,
-        WINDOW_WIDTH, WINDOW_HEIGHT);
-    SDL_SetTextureBlendMode(f3_texture, SDL_BLENDMODE_BLEND);
+    f3_atlas = create_font_atlas(
+        renderer, "assets/font/Minecraft.otf", 23,
+        (SDL_Color) { 0xff, 0xff, 0xff, 0xff });
 
     block_init();
     
@@ -152,6 +139,7 @@ int main(int argc, char **argv)
     u64 cur_time, last_time = last_fps_time;
     float dt = 0.f;
     int ticks = 0;
+    int fps = 0;
     char f3_str[64] = { 0 };
 
     SDL_Rect border = {
@@ -210,22 +198,16 @@ int main(int argc, char **argv)
             };
             SDL_RenderFillRect(renderer, &minimap_player);
         }
-
-        SDL_LockTextureToSurface(f3_texture, NULL, &f3_surface);
-        SDL_FillRect(f3_surface, NULL, 0);
+        
         sprintf(f3_str, "%d FPS\nX: %.2f, Y: %.2f",
                         fps, player.x, player.y);
-        render_text(font_f3_atlas, f3_str, 15, 15, f3_surface);
-        SDL_UnlockTexture(f3_texture);
-        SDL_RenderCopy(renderer, f3_texture, NULL, NULL);
+        render_text(renderer, f3_atlas, f3_str, 15, 15);
         
         SDL_RenderPresent(renderer);
     }
 
 
     SDL_DestroyTexture(texture_blocks);
-    SDL_DestroyTexture(f3_texture);
-    arena_free(font_f3_arena);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 
