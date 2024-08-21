@@ -27,7 +27,7 @@ void generate_world(world_t world, u64 seed)
     int i = 0;
     for (int dx = 0; dx < WORLD_WIDTH; dx++) {
         int x = dx - WORLD_WIDTH / 2;
-#define NOISE(x, seed) noise1d((x / 1000.f) * M_PI + M_PI, 5, seed)
+#define NOISE(x, seed) noise1d((x / 500.f) * M_PI + M_PI, 5, seed)
         int grass_y = NOISE(x, seed) * GRASS_RANGE + GRASS_MIN;
         int dirt_y = grass_y - (NOISE(x, seed + 5) * DIRT_RANGE + DIRT_MIN);
         for (int y = WORLD_HEIGHT - 1; y >= 0; y--) {
