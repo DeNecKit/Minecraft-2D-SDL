@@ -188,24 +188,28 @@ int main(int argc, char **argv)
         }
 
         player_update(&player, dt);
-
+        
         SDL_SetRenderDrawColor(renderer, 0xb0, 0xd6, 0xf5, 0xff);
         SDL_RenderClear(renderer);
         
         render_world(world, renderer, &player);
-        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x80);
-        SDL_RenderFillRect(renderer, NULL);
 
-        SDL_SetRenderDrawColor(renderer, 0xff, 0x00, 0x00, 0xff);
-        SDL_RenderDrawRect(renderer, &border);
-        SDL_RenderCopy(renderer, minimap_texture, NULL, &minimap_dst);
-        
-        SDL_Rect minimap_player = {
-            .x = WINDOW_WIDTH / 2 + player.x - 3,
-            .y = WINDOW_HEIGHT / 2 + WORLD_HEIGHT / 2 - player.y - 3,
-            .w = 6, .h = 6
-        };
-        SDL_RenderFillRect(renderer, &minimap_player);
+        const u8 *kb_state = SDL_GetKeyboardState(NULL);
+        if (kb_state[SDL_SCANCODE_SPACE]) {
+            SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x80);
+            SDL_RenderFillRect(renderer, NULL);
+
+            SDL_SetRenderDrawColor(renderer, 0xff, 0x00, 0x00, 0xff);
+            SDL_RenderDrawRect(renderer, &border);
+            SDL_RenderCopy(renderer, minimap_texture, NULL, &minimap_dst);
+            
+            SDL_Rect minimap_player = {
+                .x = WINDOW_WIDTH / 2 + player.x - 3,
+                .y = WINDOW_HEIGHT / 2 + WORLD_HEIGHT / 2 - player.y - 3,
+                .w = 6, .h = 6
+            };
+            SDL_RenderFillRect(renderer, &minimap_player);
+        }
 
         SDL_LockTextureToSurface(f3_texture, NULL, &f3_surface);
         SDL_FillRect(f3_surface, NULL, 0);
