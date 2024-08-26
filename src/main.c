@@ -206,6 +206,7 @@ int main(int argc, char **argv)
         SDL_RenderPresent(renderer);
     }
 
+    free_font_atlas(&f3_atlas);
     SDL_DestroyTexture(texture_blocks);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

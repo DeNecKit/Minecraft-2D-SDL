@@ -11,9 +11,8 @@
 #define FONT_CHAR_COUNT (FONT_CHAR_END - FONT_CHAR_START + 1)
 
 typedef struct {
-    SDL_Texture *glyphs_ptr[FONT_CHAR_COUNT];
-    int chars_width[FONT_CHAR_COUNT];
-    int chars_height[FONT_CHAR_COUNT];
+    SDL_Texture *texture;
+    SDL_Rect glyphs[FONT_CHAR_COUNT];
     int min_char_height;
 } font_atlas;
 
@@ -23,5 +22,6 @@ void create_font_atlas(SDL_Renderer *renderer,
                        int ptsize, SDL_Color fg);
 void render_text(SDL_Renderer *renderer, font_atlas *atlas,
                  const char *str, int x, int y);
+void free_font_atlas(font_atlas *atlas);
 
 #endif // TEXT_H
