@@ -1,37 +1,59 @@
+OBJDIR = build
+OUTNAME = Minecraft-2D
+OUT = ${OBJDIR}/${OUTNAME}
+RELEASE_FOLDER = ${OBJDIR}/release
+
 CC = gcc
 SRC = ${wildcard src/*.c}
-OBJ = ${patsubst src/%.c, build/%.o, ${SRC}}
-CFLAGS = -Dmain=SDL_main -Wall -Wextra -std=c11 -Wpedantic
+DEP = ${patsubst src/%.c, ${OBJDIR}/%.d, ${SRC}}
+-include ${DEP}
+OBJ = ${patsubst src/%.c, ${OBJDIR}/%.o, ${SRC}}
+CFLAGS = -Wall -Wextra -std=c11 -Wpedantic
 CFLAGS += -Wswitch -Wswitch-enum
 CFLAGS += -I./include -I./include/SDL2
-CFLAGS_DEBUG = -g
-CFLAGS_RELEASE = -O3 -mwindows -DNDEBUG
-LIB = -L./lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
-OUT = build/Minecraft-2D.exe
-RELEASE_NAME = Minecraft-2D-${shell git describe --tags}
+CFLAGS_DEBUG = -ggdb
+CFLAGS_RELEASE = -O3 -DNDEBUG
 
-.PHONY: all build run
+ifeq (${OS}, Windows_NT)
+	CFLAGS += -Dmain=SDL_main
+	CFLAGS_RELEASE += -mwindows
+	LIB = -L./lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
+	MKDIR = powershell mkdir
+	CP = powershell cp
+else
+	LIB = -L./lib -lSDL2 -lSDL2_image -lSDL2_ttf
+	MKDIR = mkdir
+	CP = cp
+endif
 
-all: run
+.PHONY: run release
 
-${OUT}: ${SRC} ${wildcard src/*.h}
-	powershell new-item -itemtype directory -force -path build | powershell out-null
-	make build
+${OUT}: ${OBJ} | ${OBJDIR}
+	${CC} ${OBJ} -o ${OUT} ${LIB} ${CFLAGS} ${CFLAGS_DEBUG}
 
-build: ${OBJ}
-	${CC} ${OBJ} -o ${OUT} ${LIB} ${CFLAGS_DEBUG}
+${OBJDIR}:
+	mkdir ${OBJDIR}
 
-build/%.o: src/%.c
-	${CC} -c $< -o $@ ${CFLAGS} ${CFLAGS_DEBUG}
+${OBJDIR}/%.o: src/%.c Makefile
+	${CC} -c $< -o $@ ${CFLAGS} ${CFLAGS_DEBUG} -MMD -MP
 
 run: ${OUT}
 	./${OUT}
 
 clean:
-	powershell remove-item build/* -include *.o, *.exe
+ifeq (${OS}, Windows_NT)
+	powershell remove-item ${OBJDIR}/* -include *.o, *.exe, *.d | powershell out-null
+	powershell remove-item -r ${RELEASE_FOLDER} | powershell out-null
+else
+	rm -rf ${OBJDIR}/*.o ${OBJDIR}/*.d ${OUT} ${RELEASE_FOLDER}
+endif
 
-build-release:
-	powershell new-item -itemtype directory -force -path build/releases/${RELEASE_NAME} | powershell out-null
-	${CC} ${SRC} -o build/releases/${RELEASE_NAME}/Minecraft-2D.exe ${CFLAGS} ${CFLAGS_RELEASE} ${LIB}
-	powershell copy assets -d build/releases/${RELEASE_NAME} -r | powershell out-null
-	powershell copy build/*.dll -d build/releases/${RELEASE_NAME} | powershell out-null
+release: | ${RELEASE_FOLDER}
+	${CC} ${SRC} -o ${RELEASE_FOLDER}/${OUTNAME} ${CFLAGS} ${CFLAGS_RELEASE} ${LIB}
+	${CP} -r assets ${RELEASE_FOLDER}
+ifeq (${OS}, Windows_NT)
+	${CP} ${OBJDIR}/*.dll ${RELEASE_FOLDER}
+endif
+
+${RELEASE_FOLDER}: ${OBJDIR}
+	${MKDIR} -p ${RELEASE_FOLDER}
