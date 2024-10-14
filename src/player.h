@@ -1,10 +1,14 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include "util.h"
+
 typedef struct {
-    float x, y;
+    vec2f pos;
 } player_t;
 
-void player_update(player_t *player, float dt);
+extern player_t player;
+
+void player_update(float dt);
 
 #endif // PLAYER_H
