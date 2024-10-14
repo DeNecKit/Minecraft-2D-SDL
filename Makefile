@@ -59,5 +59,5 @@ ifeq (${OS}, Windows_NT)
 	${CP} ${OBJDIR}/*.dll ${RELEASE_FOLDER}
 endif
 
-${RELEASE_FOLDER}: ${OBJDIR}
+${RELEASE_FOLDER}: | ${OBJDIR}
 	${MKDIR} -p ${RELEASE_FOLDER}
