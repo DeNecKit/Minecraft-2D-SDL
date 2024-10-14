@@ -3,6 +3,10 @@ OUTNAME = Minecraft-2D
 OUT = ${OBJDIR}/${OUTNAME}
 RELEASE_FOLDER = ${OBJDIR}/release
 
+.PHONY: all run release
+
+all: ${OUT}
+
 CC = gcc
 SRC = ${wildcard src/*.c}
 DEP = ${patsubst src/%.c, ${OBJDIR}/%.d, ${SRC}}
@@ -26,7 +30,7 @@ else
 	CP = cp
 endif
 
-.PHONY: run release
+
 
 ${OUT}: ${OBJ} | ${OBJDIR}
 	${CC} ${OBJ} -o ${OUT} ${LIB} ${CFLAGS} ${CFLAGS_DEBUG}
