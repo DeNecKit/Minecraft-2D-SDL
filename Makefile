@@ -33,8 +33,10 @@ endif
 
 
 
-${OUT}: ${OBJ} | ${OBJDIR}
+${OUT}: ${OBJ}
 	${CC} ${OBJ} -o ${OUT} ${LIB} ${CFLAGS} ${CFLAGS_DEBUG}
+
+${OBJ}: | ${OBJDIR}
 
 ${OBJDIR}:
 	mkdir ${OBJDIR}
