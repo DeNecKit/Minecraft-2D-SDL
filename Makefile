@@ -13,19 +13,20 @@ DEP = ${patsubst src/%.c, ${OBJDIR}/%.d, ${SRC}}
 -include ${DEP}
 OBJ = ${patsubst src/%.c, ${OBJDIR}/%.o, ${SRC}}
 CFLAGS = -Wall -Wextra -std=c11 -Wpedantic
-CFLAGS += -Wswitch -Wswitch-enum
-CFLAGS += -I./include -I./include/SDL2
+CFLAGS += -Wswitch -Wswitch-enum -I./include
 CFLAGS_DEBUG = -ggdb
 CFLAGS_RELEASE = -O3 -DNDEBUG
 
 ifeq (${OS}, Windows_NT)
 	CFLAGS += -Dmain=SDL_main
+	CFLAGS += -I./include/SDL2
 	CFLAGS_RELEASE += -mwindows
 	LIB = -L./lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
 	MKDIR = powershell mkdir
 	CP = powershell cp
 else
-	LIB = -L./lib -lSDL2 -lSDL2_image -lSDL2_ttf
+	CFLAGS += -I/usr/include/SDL2
+	LIB = -L./lib -lSDL2 -lSDL2_image -lSDL2_ttf -lm
 	MKDIR = mkdir
 	CP = cp
 endif

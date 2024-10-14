@@ -10,6 +10,10 @@
 #include <assert.h>
 #include <math.h>
 
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
+
 #define ERROR_EXIT(...) do { \
     fprintf(stderr, "ERROR: " __VA_ARGS__); \
     exit(1); \
